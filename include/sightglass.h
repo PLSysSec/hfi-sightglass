@@ -6,18 +6,14 @@
  * immediately prior to the code to measure with sightglass-recorder. The attributes allow compilers
  * to generate the correct Wasm imports.
  */
-__attribute__((import_module("bench")))
-__attribute__((import_name("start")))
-void bench_start();
+static void bench_start() {}
 
 /**
  * Call this function to indicate that recording should end. This call should be placed immediately
  * after the code to measure with sightglass-recorder. The attributes allow compilers to generate
  * the correct Wasm imports.
  */
-__attribute__((import_module("bench")))
-__attribute__((import_name("end")))
-void bench_end();
+static void bench_end() {}
 
 /**
  * Call this function to prevent certain compiler-related optimizations related to knowing the value

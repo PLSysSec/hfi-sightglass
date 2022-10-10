@@ -1,5 +1,5 @@
 
-#include <sightglass.h>
+#include "sightglass.h"
 #include <assert.h>
 #include <errno.h>
 #include <stdio.h>
