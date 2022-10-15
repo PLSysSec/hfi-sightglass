@@ -6,10 +6,10 @@ HFI_PATH=$(realpath ../../hw_isol_gem5/tests/test-progs/hfi)
 UVWASI_PATH=$WABT_ROOT/third_party/uvwasi
 BMKS_PATH=$(dirname $(realpath -s $0))
 W2C_RT_PATH=${WABT_ROOT}/wasm2c
-W2C_RT_FILES="${W2C_RT_PATH}/wasm-rt-impl.c ${W2C_RT_PATH}/wasm-rt-os-unix.c ${W2C_RT_PATH}/uvwasi-rt.c"
+W2C_RT_FILES="${W2C_RT_PATH}/wasm-rt-runner-static.c ${W2C_RT_PATH}/wasm-rt-impl.c ${W2C_RT_PATH}/wasm-rt-os-unix.c ${W2C_RT_PATH}/uvwasi-rt.c"
 
 INCS="-I${UVWASI_PATH}/include -I${W2C_RT_PATH} -I${HFI_PATH} -I${BMKS_PATH}"
-LIBS="-luvwasi_a -luv -lpthread"
+LIBS="-luvwasi_a -luv_a -ldl -lpthread"
 
 GP_FLAGS=-DWASM_USE_GUARD_PAGES
 BC_FLAGS=-DWASM_USE_BOUNDS_CHECKS
@@ -22,7 +22,7 @@ build_bin() {
     BIN_ROOT=${WABT_ROOT}/build_release_${SEC_CHOICE}
     ${BIN_ROOT}/wasm2c $1/hfi_benchmark.wasm -o $1/hfi_benchmark_${SEC_CHOICE}.c
     DEPS="-L${BIN_ROOT}/_deps/libuv-build -L${BIN_ROOT}/third_party/uvwasi"
-    ${CC} -shared -fPIC -O3 $1/hfi_benchmark_${SEC_CHOICE}.c ${W2C_RT_FILES} -o $1/hfi_benchmark_${SEC_CHOICE}.so ${INCS} ${DEPS} ${SEC_FLAGS} ${LIBS}
+    ${CC} -fPIC -O3 $1/hfi_benchmark_${SEC_CHOICE}.c ${W2C_RT_FILES} -o $1/hfi_benchmark_${SEC_CHOICE} ${INCS} ${DEPS} ${SEC_FLAGS} ${LIBS}
 }
 
 for dir in */
