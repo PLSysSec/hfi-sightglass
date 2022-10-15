@@ -1,15 +1,25 @@
+set -e
+# set -o xtrace
+
 CC=clang
 
-WABT_ROOT=$(realpath ../../hfi_wasm2c_sandbox_compiler)
-
-HFI_PATH=$(realpath ../../hw_isol_gem5/tests/test-progs/hfi)
-UVWASI_PATH=$WABT_ROOT/third_party/uvwasi
 BMKS_PATH=$(dirname $(realpath -s $0))
+ROOT_PATH=${BMKS_PATH}/../..
+WASI_SDK_ROOT=${ROOT_PATH}/wasi-sdk
+WASI_CLANG=${WASI_SDK_ROOT}/bin/clang
+WASI_CLANG_CXX=${WASI_SDK_ROOT}/bin/clang
+
+WASI_CFLAGS="--sysroot ${WASI_SDK_ROOT}/share/wasi-sysroot -Wl,--export-all -Wl,--global-base=100000 -Wl,-z,stack-size=1048576 -Wl,--growable-table"
+BENCHMARK_FLAGS=-I$(realpath ../include)
+WABT_ROOT=${ROOT_PATH}/hfi_wasm2c_sandbox_compiler
+
+HFI_PATH=${ROOT_PATH}/hw_isol_gem5/tests/test-progs/hfi
+UVWASI_PATH=${WABT_ROOT}/third_party/uvwasi
 W2C_RT_PATH=${WABT_ROOT}/wasm2c
-W2C_RT_FILES="${W2C_RT_PATH}/wasm-rt-impl.c ${W2C_RT_PATH}/wasm-rt-os-unix.c ${W2C_RT_PATH}/uvwasi-rt.c"
+W2C_RT_FILES="${W2C_RT_PATH}/wasm-rt-impl.c ${W2C_RT_PATH}/wasm-rt-os-unix.c ${W2C_RT_PATH}/uvwasi-rt.c ${W2C_RT_PATH}/wasm-rt-runner-static.c"
 
 INCS="-I${UVWASI_PATH}/include -I${W2C_RT_PATH} -I${HFI_PATH} -I${BMKS_PATH}"
-LIBS="-luvwasi_a -luv -lpthread"
+LIBS="-luvwasi_a -luv_a -lpthread"
 
 GP_FLAGS=-DWASM_USE_GUARD_PAGES
 BC_FLAGS=-DWASM_USE_BOUNDS_CHECKS
@@ -19,10 +29,10 @@ EMU1_FLAGS="${HFI_FLAGS} -DHFI_EMULATION"
 EMU2_FLAGS="${HFI_FLAGS} -DHFI_EMULATION2"
 
 build_bin() {
-    BIN_ROOT=${WABT_ROOT}/build_release_${SEC_CHOICE}
+    BIN_ROOT=${WABT_ROOT}/build_release_guardpages
     ${BIN_ROOT}/wasm2c $1/hfi_benchmark.wasm -o $1/hfi_benchmark_${SEC_CHOICE}.c
     DEPS="-L${BIN_ROOT}/_deps/libuv-build -L${BIN_ROOT}/third_party/uvwasi"
-    ${CC} -shared -fPIC -O3 $1/hfi_benchmark_${SEC_CHOICE}.c ${W2C_RT_FILES} -o $1/hfi_benchmark_${SEC_CHOICE}.so ${INCS} ${DEPS} ${SEC_FLAGS} ${LIBS}
+    ${CC} -O3 $1/hfi_benchmark_${SEC_CHOICE}.c ${W2C_RT_FILES} -o $1/hfi_benchmark_${SEC_CHOICE} ${INCS} ${DEPS} ${SEC_FLAGS} ${LIBS}
 }
 
 for dir in */
@@ -35,22 +45,22 @@ do
     CPPSRC=${dir}/benchmark.cpp
     CSRC=${dir}/benchmark.c
     if [[ ! -L "${dir}/Dockerfile" ]]; then
-	echo "Skipping ${dir}, custom docker file!"
-	continue
+    echo "Skipping ${dir}, custom docker file!"
+    continue
     fi
 
     echo Building $dir.wasm...
     if test -f "${CPPSRC}"; then
-	./hfi-wasi-clang.sh ${CPPSRC} -o ${dir}/hfi_benchmark.wasm
+       ${WASI_CLANG} ${WASI_CFLAGS} ${BENCHMARK_FLAGS} ${CPPSRC} -o ${dir}/hfi_benchmark.wasm
     else
-	./hfi-wasi-clang.sh ${CSRC} -o ${dir}/hfi_benchmark.wasm
+        ${WASI_CLANG_CXX} ${WASI_CFLAGS} ${BENCHMARK_FLAGS} ${CSRC} -o ${dir}/hfi_benchmark.wasm
     fi
 
     echo "Building ${dir} with guard pages."
     SEC_CHOICE=guardpages
     SEC_FLAGS=${GP_FLAGS}
     build_bin ${dir}
-    
+
     echo "Building ${dir} with bounds checks."
     SEC_CHOICE=boundschecks
     SEC_FLAGS=${BC_FLAGS}
