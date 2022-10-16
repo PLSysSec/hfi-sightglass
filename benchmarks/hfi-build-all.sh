@@ -19,7 +19,7 @@ W2C_RT_PATH=${WABT_ROOT}/wasm2c
 W2C_RT_FILES="${W2C_RT_PATH}/wasm-rt-impl.c ${W2C_RT_PATH}/wasm-rt-os-unix.c ${W2C_RT_PATH}/uvwasi-rt.c ${W2C_RT_PATH}/wasm-rt-runner-static.c"
 
 INCS="-I${UVWASI_PATH}/include -I${W2C_RT_PATH} -I${HFI_PATH} -I${BMKS_PATH}"
-LIBS="-luvwasi_a -luv_a -lpthread"
+LIBS="-luvwasi_a -luv_a -lpthread -ldl"
 
 GP_FLAGS=-DWASM_USE_GUARD_PAGES
 BC_FLAGS=-DWASM_USE_BOUNDS_CHECKS
@@ -37,23 +37,26 @@ build_bin() {
 
 for dir in */
 do
-    # if [[ "${dir}" == "spidermonkey/" ]]; then
-    #     echo "***skipping spidermonkey.**"
-    #     continue
-    # fi
+    if [[ "${dir}" != "spidermonkey/" ]]; then
+        echo "***!skipping spidermonkey.**"
+        continue
+    fi
     dir=${dir%*/}
     CPPSRC=${dir}/benchmark.cpp
     CSRC=${dir}/benchmark.c
-    if [[ ! -L "${dir}/Dockerfile" ]]; then
-    echo "Skipping ${dir}, custom docker file!"
-    continue
-    fi
+    # if [[ ! -L "${dir}/Dockerfile" ]]; then
+    # echo "Skipping ${dir}, custom docker file!"
+    # continue
+    # fi
 
     echo Building $dir.wasm...
     if test -f "${CPPSRC}"; then
        ${WASI_CLANG} ${WASI_CFLAGS} ${BENCHMARK_FLAGS} ${CPPSRC} -o ${dir}/hfi_benchmark.wasm
-    else
+    elif test -f "${CSRC}"; then
         ${WASI_CLANG_CXX} ${WASI_CFLAGS} ${BENCHMARK_FLAGS} ${CSRC} -o ${dir}/hfi_benchmark.wasm
+    else
+        echo "Skipping rust benchmark ${dir}"
+        continue
     fi
 
     echo "Building ${dir} with guard pages."

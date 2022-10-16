@@ -20,7 +20,7 @@ RUN ln -s wasi-sdk-14.0 wasi-sdk
 
 WORKDIR /usr/src
 RUN mkdir benchmark && cd benchmark/
-COPY runtime.cpp .
+COPY benchmark.cpp .
 COPY sightglass.h .
 COPY build.sh .
 RUN ./build.sh
