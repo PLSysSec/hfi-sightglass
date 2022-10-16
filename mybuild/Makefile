@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := build
 
 # if we use gcc or cc, hfi mode breaks in gem5
-CC=clang
+# CC=clang
 
 ROOT_PATH=$(shell realpath ../..)
 WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/
@@ -79,6 +79,9 @@ run_hfi               : $(addsuffix _hfi_run,               $(BENCHMARKS))
 run_hfiemulate        : $(addsuffix _hfiemulate_run,        $(BENCHMARKS))
 run_hfiemulate2       : $(addsuffix _hfiemulate2_run,       $(BENCHMARKS))
 
-clean:
+%_remove_benchmark:
+	rm -f ../benchmarks/$*/benchmark_*
+
+clean: $(addsuffix _remove_benchmark, $(BENCHMARKS))
 	rm -f *.wasm*
 	rm -f *_*
