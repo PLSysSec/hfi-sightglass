@@ -1,5 +1,8 @@
 .DEFAULT_GOAL := build
 
+# if we use gcc or cc, hfi mode breaks in gem5
+CC=clang
+
 ROOT_PATH=$(shell realpath ../..)
 WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/
 UVWASI_PATH=$(WABT_SRC_ROOT)/third_party/uvwasi
@@ -15,7 +18,7 @@ WABT_BIN_ROOT=$(WABT_SRC_ROOT)/build_release_guardpages
 WASM2C=$(WABT_BIN_ROOT)/wasm2c
 INCS=-I$(UVWASI_PATH)/include -I$(WASM2C_RUNTIME_PATH) -I$(HFIPATH)
 DEPS=-L$(WABT_BIN_ROOT)/_deps/libuv-build -L$(WABT_BIN_ROOT)/third_party/uvwasi
-LIBS=-luvwasi_a -luv -lpthread -lm
+LIBS=-luvwasi_a -luv_a -ldl -lpthread -lm
 
 # wasm2c: spidermonkey blake3-simd intgemm-simd
 # hfiemulate2: meshoptimizer bz2
@@ -28,7 +31,7 @@ BENCHMARK_FLAGS=-O3
 
 .PRECIOUS: %_build_guardpage
 %_build_guardpage: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED) $(INCS) $(DEPS) $(LIBS)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -DWASM_NONHFI_USE_ASM_MOVE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_guardpage
 
 .PRECIOUS: %_build_hfi
