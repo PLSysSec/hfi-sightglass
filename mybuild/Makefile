@@ -57,7 +57,7 @@ BENCHMARK_FLAGS=-O3
 	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION2 -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_hfiemulate2
 
-%_all: %_build_guardpage %__build_guardpage_asmmove %_build_hfi %_build_hfiemulate %_build_hfiemulate2
+%_all: %_build_guardpage %_build_guardpage_asmmove %_build_hfi %_build_hfiemulate %_build_hfiemulate2
 	touch $*_all
 
 build: $(addsuffix _all, $(BENCHMARKS))
