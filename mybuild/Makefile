@@ -10,8 +10,11 @@ HFIPATH=$(ROOT_PATH)/hw_isol_gem5/tests/test-progs/hfi/
 
 WASM2C_RUNTIME_PATH=$(WABT_SRC_ROOT)/wasm2c/
 WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c wasm-rt-runner-static.c)
-ENGINE_NOOP=engine-noop.c
-ENGINE_TIMED=engine-timed.c
+ifdef NOTIMED
+	ENGINE=engine-noop.c
+else
+	ENGINE=engine-timed.c
+endif()
 
 # Just pick one of the builds, as we only want wasm2c and uv which are unchanges across all versions
 WABT_BIN_ROOT=$(WABT_SRC_ROOT)/build_release_guardpages
@@ -30,44 +33,52 @@ BENCHMARK_FLAGS=-O3
 	$(WASM2C) $< -o $@
 
 .PRECIOUS: %_build_guardpage
-%_build_guardpage: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -DWASM_NONHFI_USE_ASM_MOVE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED) $(INCS) $(DEPS) $(LIBS)
+%_build_guardpage: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_guardpage
 
+.PRECIOUS: %_build_guardpage_asmmove
+%_build_guardpage_asmmove: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -DWASM_NONHFI_USE_ASM_MOVE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
+	cp $@ ../benchmarks/$*/benchmark_guardpage_asmmove
+
 .PRECIOUS: %_build_hfi
-%_build_hfi: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE_NOOP)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE_NOOP) $(INCS) $(DEPS) $(LIBS)
+%_build_hfi: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_hfi
 
 .PRECIOUS: %_build_hfiemulate
-%_build_hfiemulate: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED) $(INCS) $(DEPS) $(LIBS)
+%_build_hfiemulate: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_hfiemulate
 
 .PRECIOUS: %_build_hfiemulate2
-%_build_hfiemulate2: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION2 -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE_TIMED) $(INCS) $(DEPS) $(LIBS)
+%_build_hfiemulate2: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION2 -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_hfiemulate2
 
-%_all: %_build_guardpage %_build_hfi %_build_hfiemulate %_build_hfiemulate2
+%_all: %_build_guardpage %__build_guardpage_asmmove %_build_hfi %_build_hfiemulate %_build_hfiemulate2
 	touch $*_all
 
 build: $(addsuffix _all, $(BENCHMARKS))
 
 %_guardpage_run:
-	echo "Running ../benchmarks/$*/benchmark_guardpage"   && cd ../benchmarks/$* && ./benchmark_guardpage
+	echo "Running ../benchmarks/$*/benchmark_guardpage"         && cd ../benchmarks/$* && ./benchmark_guardpage
+%_guardpage_asmmove_run:
+	echo "Running ../benchmarks/$*/benchmark_guardpage_asmmove" && cd ../benchmarks/$* && ./benchmark_guardpage_asmmove
 %_hfi_run:
-	echo "Running ../benchmarks/$*/benchmark_hfi"         && cd ../benchmarks/$* && ./benchmark_hfi
+	echo "Running ../benchmarks/$*/benchmark_hfi"               && cd ../benchmarks/$* && ./benchmark_hfi
 %_hfiemulate_run:
-	echo "Running ../benchmarks/$*/benchmark_hfiemulate"  && cd ../benchmarks/$* && ./benchmark_hfiemulate
+	echo "Running ../benchmarks/$*/benchmark_hfiemulate"        && cd ../benchmarks/$* && ./benchmark_hfiemulate
 %_hfiemulate2_run:
-	echo "Running ../benchmarks/$*/benchmark_hfiemulate2" && cd ../benchmarks/$* && ./benchmark_hfiemulate2
+	echo "Running ../benchmarks/$*/benchmark_hfiemulate2"       && cd ../benchmarks/$* && ./benchmark_hfiemulate2
 
-run_guardpage  : $(addsuffix _guardpage_run, $(BENCHMARKS))
-run_hfi        : $(addsuffix _hfi_run, $(BENCHMARKS))
-run_hfiemulate : $(addsuffix _hfiemulate_run, $(BENCHMARKS))
-run_hfiemulate2: $(addsuffix _hfiemulate2_run, $(BENCHMARKS))
+run_guardpage         : $(addsuffix _guardpage_run,         $(BENCHMARKS))
+run_guardpage_asmmove : $(addsuffix _guardpage_asmmove_run, $(BENCHMARKS))
+run_hfi               : $(addsuffix _hfi_run,               $(BENCHMARKS))
+run_hfiemulate        : $(addsuffix _hfiemulate_run,        $(BENCHMARKS))
+run_hfiemulate2       : $(addsuffix _hfiemulate2_run,       $(BENCHMARKS))
 
 clean:
-	rm *.wasm*
-	rm *_*
+	rm -f *.wasm*
+	rm -f *_*
