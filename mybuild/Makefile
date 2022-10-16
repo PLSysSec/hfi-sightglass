@@ -1,0 +1,66 @@
+.DEFAULT_GOAL := build
+
+ROOT_PATH=$(shell realpath ../..)
+WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/
+UVWASI_PATH=$(WABT_SRC_ROOT)/third_party/uvwasi
+HFIPATH=$(ROOT_PATH)/hw_isol_gem5/tests/test-progs/hfi/
+
+WASM2C_RUNTIME_PATH=$(WABT_SRC_ROOT)/wasm2c/
+WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c wasm-rt-runner-static.c) engine.c
+# Just pick one of the builds, as we only want wasm2c and uv which are unchanges across all versions
+WABT_BIN_ROOT=$(WABT_SRC_ROOT)/build_release_guardpages
+WASM2C=$(WABT_BIN_ROOT)/wasm2c
+INCS=-I$(UVWASI_PATH)/include -I$(WASM2C_RUNTIME_PATH) -I$(HFIPATH)
+DEPS=-L$(WABT_BIN_ROOT)/_deps/libuv-build -L$(WABT_BIN_ROOT)/third_party/uvwasi
+LIBS=-luvwasi_a -luv -lpthread -lm
+
+# spidermonkey blake3-simd intgemm-simd
+BENCHMARKS=blake3-scalar meshoptimizer shootout-ackermann shootout-gimli shootout-minicsv shootout-sieve shootout-base64 shootout-heapsort shootout-nestedloop pulldown-cmark shootout-ctype shootout-keccak shootout-random shootout-switch shootout-ed25519 shootout-matrix shootout-ratelimit shootout-xblabla20 bz2 shootout-fib2 shootout-memmove shootout-seqhash shootout-xchacha20
+BENCHMARK_FLAGS=-O3
+
+.PRECIOUS: %.wasm.c
+%.wasm.c: ../benchmarks/%/benchmark.wasm
+	$(WASM2C) $< -o $@
+
+.PRECIOUS: %_build_guardpage
+%_build_guardpage: %.wasm.c
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -o $@ $< $(WASM2C_RUNTIME_FILES) $(INCS) $(DEPS) $(LIBS)
+	cp $@ ../benchmarks/$*/benchmark_guardpage
+
+.PRECIOUS: %_build_hfi
+%_build_hfi: %.wasm.c
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -o $@ $< $(WASM2C_RUNTIME_FILES) $(INCS) $(DEPS) $(LIBS)
+	cp $@ ../benchmarks/$*/benchmark_hfi
+
+.PRECIOUS: %_build_hfiemulate
+%_build_hfiemulate: %.wasm.c
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION -o $@ $< $(WASM2C_RUNTIME_FILES) $(INCS) $(DEPS) $(LIBS)
+	cp $@ ../benchmarks/$*/benchmark_hfiemulate
+
+.PRECIOUS: %_build_hfiemulate2
+%_build_hfiemulate2: %.wasm.c
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION2 -o $@ $< $(WASM2C_RUNTIME_FILES) $(INCS) $(DEPS) $(LIBS)
+	cp $@ ../benchmarks/$*/benchmark_hfiemulate2
+
+%_all: %_build_guardpage %_build_hfi %_build_hfiemulate %_build_hfiemulate2
+	touch %_all
+
+build: $(addsuffix _all, $(BENCHMARKS))
+
+%_guardpage_run:
+	echo "Running ../benchmarks/$*/benchmark_guardpage"   && cd ../benchmarks/$* && ./benchmark_guardpage
+%_hfi_run:
+	echo "Running ../benchmarks/$*/benchmark_hfi"         && cd ../benchmarks/$* && ./benchmark_hfi
+%_hfiemulate_run:
+	echo "Running ../benchmarks/$*/benchmark_hfiemulate"  && cd ../benchmarks/$* && ./benchmark_hfiemulate
+%_hfiemulate2_run:
+	echo "Running ../benchmarks/$*/benchmark_hfiemulate2" && cd ../benchmarks/$* && ./benchmark_hfiemulate2
+
+run_guardpage  : $(addsuffix _guardpage_run, $(BENCHMARKS))
+run_hfi        : $(addsuffix _hfi_run, $(BENCHMARKS))
+run_hfiemulate : $(addsuffix _hfiemulate_run, $(BENCHMARKS))
+run_hfiemulate2: $(addsuffix _hfiemulate2_run, $(BENCHMARKS))
+
+clean:
+	rm *.wasm*
+	rm *_*
