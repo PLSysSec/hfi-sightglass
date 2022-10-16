@@ -14,7 +14,7 @@ ifdef NOTIMED
 	ENGINE=engine-noop.c
 else
 	ENGINE=engine-timed.c
-endif()
+endif
 
 # Just pick one of the builds, as we only want wasm2c and uv which are unchanges across all versions
 WABT_BIN_ROOT=$(WABT_SRC_ROOT)/build_release_guardpages
