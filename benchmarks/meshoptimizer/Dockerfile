@@ -19,6 +19,6 @@ COPY sightglass.h .
 
 # Meshoptimizer is expected to be compiled with emscripten but that build
 # does not run properly in wasmtime.
-ENV WASM_CC=/wasi-sdk-12.0/bin/clang++
+ENV WASM_CC=/wasi-sdk-12.0/bin/clang++ -Wl,--export-all -Wl,--global-base=150000 -Wl,-z,stack-size=1048576 -Wl,--growable-table
 ENV WASI_SYSROOT=/wasi-sdk-12.0/share/wasi-sysroot/
 RUN make codecbench.wasm && mv codecbench.wasm /benchmark.wasm

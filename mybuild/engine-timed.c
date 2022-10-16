@@ -5,6 +5,10 @@
 #include <time.h>
 #include <unistd.h>
 
+__attribute__((weak)) uint32_t Z_envZ_emscripten_stack_get_endZ_iv(void* sbx) {
+    return 0;
+}
+
 #define BILLION ((int64_t)1000000000)
 
 static void setTime(struct timespec* time_struct) {
