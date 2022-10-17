@@ -65,27 +65,27 @@ build: $(addsuffix _all, $(BENCHMARKS))
 %_guardpage_run:
 	echo "Running ../benchmarks/$*/benchmark_guardpage" \
 		&& cd ../benchmarks/$* && \
-		SIGHTGLASS_OUTPUTFILE="$*_guardpage" ./benchmark_guardpage
+		SIGHTGLASS_OUTPUTFILE="$*_guardpage" taskset -c 1 ./benchmark_guardpage
 
 %_guardpage_asmmove_run:
 	echo "Running ../benchmarks/$*/benchmark_guardpage_asmmove" \
 		&& cd ../benchmarks/$* && \
-		SIGHTGLASS_OUTPUTFILE="$*_guardpage_asmmove" ./benchmark_guardpage_asmmove
+		SIGHTGLASS_OUTPUTFILE="$*_guardpage_asmmove" taskset -c 1 ./benchmark_guardpage_asmmove
 
 %_hfi_run:
 	echo "Running ../benchmarks/$*/benchmark_hfi" \
 		&& cd ../benchmarks/$* && \
-		SIGHTGLASS_OUTPUTFILE="$*_hfi" ./benchmark_hfi
+		SIGHTGLASS_OUTPUTFILE="$*_hfi" taskset -c 1 ./benchmark_hfi
 
 %_hfiemulate_run:
 	echo "Running ../benchmarks/$*/benchmark_hfiemulate" \
 		&& cd ../benchmarks/$* && \
-		SIGHTGLASS_OUTPUTFILE="$*_hfiemulate" ./benchmark_hfiemulate
+		SIGHTGLASS_OUTPUTFILE="$*_hfiemulate" taskset -c 1 ./benchmark_hfiemulate
 
 %_hfiemulate2_run:
 	echo "Running ../benchmarks/$*/benchmark_hfiemulate2" \
 		&& cd ../benchmarks/$* && \
-		SIGHTGLASS_OUTPUTFILE="$*_hfiemulate2" ./benchmark_hfiemulate2
+		SIGHTGLASS_OUTPUTFILE="$*_hfiemulate2" taskset -c 1 ./benchmark_hfiemulate2
 
 
 run_guardpage         : $(addsuffix _guardpage_run,         $(BENCHMARKS))
