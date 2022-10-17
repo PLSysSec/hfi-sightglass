@@ -24,8 +24,8 @@ DEPS=-L$(WABT_BIN_ROOT)/_deps/libuv-build -L$(WABT_BIN_ROOT)/third_party/uvwasi
 LIBS=-luvwasi_a -luv_a -ldl -lpthread -lm
 
 # wasm2c: spidermonkey blake3-simd intgemm-simd
-# hfiemulate2: meshoptimizer bz2
-BENCHMARKS=blake3-scalar shootout-ackermann shootout-gimli shootout-minicsv shootout-sieve shootout-base64 shootout-heapsort shootout-nestedloop pulldown-cmark shootout-ctype shootout-keccak shootout-random shootout-switch shootout-ed25519 shootout-matrix shootout-ratelimit shootout-xblabla20 shootout-fib2 shootout-memmove shootout-seqhash shootout-xchacha20
+# length: meshoptimizer shootout-ed25519 shootout-seqhash
+BENCHMARKS=$(shell cat ./SightglassBench.inc)
 BENCHMARK_FLAGS=-O3
 
 .PRECIOUS: %.wasm.c
