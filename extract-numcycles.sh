@@ -25,7 +25,7 @@ fi
 
 for dir in $STARTDIR/*; do
     if [ -d $dir ]; then
-	if [ $(cat $dir/stats.txt) ]; then
+	if [[ $(cat "$dir"/stats.txt) ]]; then
             echo $dir
 	    BASEDIR=$(basename $dir)
             grep "numCycles" $dir/stats.txt | grep -P -o "\s+\d+\s+" | grep -P -o "\d+" > $CYCLESDIR/${BASEDIR::-5}_${CONFIG}
