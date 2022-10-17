@@ -25,6 +25,7 @@ LIBS=-luvwasi_a -luv_a -ldl -lpthread -lm
 
 # wasm2c: spidermonkey blake3-simd intgemm-simd
 # length: meshoptimizer shootout-ed25519 shootout-seqhash
+# hfiemulate: bz2
 BENCHMARKS=$(shell cat ./SightglassBench.inc)
 BENCHMARK_FLAGS=-O3
 
