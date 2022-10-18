@@ -76,44 +76,44 @@ build: $(addsuffix _all, $(BENCHMARKS))
 %_guardpage_run:
 	echo "Running ../benchmarks/$*/benchmark_guardpage" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_guardpage.json" ./benchmark_guardpage && \
-		cat "$*_guardpage.json" | jq '.results[0].mean * 1000' > "$*_guardpage"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage.json" ./benchmark_guardpage && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage"
 
 %_guardpage_asmmove_run:
 	echo "Running ../benchmarks/$*/benchmark_guardpage_asmmove" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_guardpage_asmmove.json" ./benchmark_guardpage_asmmove && \
-		cat "$*_guardpage_asmmove.json" | jq '.results[0].mean * 1000' > "$*_guardpage_asmmove"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove.json" ./benchmark_guardpage_asmmove && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove"
 
 %_boundschecks_run:
 	echo "Running ../benchmarks/$*/benchmark_boundschecks" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_boundschecks.json" ./benchmark_boundschecks && \
-		cat "$*_boundschecks.json" | jq '.results[0].mean * 1000' > "$*_boundschecks"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks.json" ./benchmark_boundschecks && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks"
 
 %_masking_run:
 	echo "Running ../benchmarks/$*/benchmark_masking" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_masking.json" ./benchmark_masking && \
-		cat "$*_masking.json" | jq '.results[0].mean * 1000' > "$*_masking"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking.json" ./benchmark_masking && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking"
 
 %_hfi_run:
 	echo "Running ../benchmarks/$*/benchmark_hfi" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_hfi.json" ./benchmark_hfi && \
-		cat "$*_hfi.json" | jq '.results[0].mean * 1000' > "$*_hfi"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi.json" ./benchmark_hfi && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi"
 
 %_hfiemulate_run:
 	echo "Running ../benchmarks/$*/benchmark_hfiemulate" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_hfiemulate.json" ./benchmark_hfiemulate && \
-		cat "$*_hfiemulate.json" | jq '.results[0].mean * 1000' > "$*_hfiemulate"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate.json" ./benchmark_hfiemulate && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate"
 
 %_hfiemulate2_run:
 	echo "Running ../benchmarks/$*/benchmark_hfiemulate2" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$*_hfiemulate2.json" ./benchmark_hfiemulate2 && \
-		cat "$*_hfiemulate2.json" | jq '.results[0].mean * 1000' > "$*_hfiemulate2"
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" ./benchmark_hfiemulate2 && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2"
 
 
 run_guardpage         : $(addsuffix _guardpage_run,         $(BENCHMARKS))
