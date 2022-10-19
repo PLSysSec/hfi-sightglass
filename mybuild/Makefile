@@ -16,6 +16,10 @@ ENGINE=engine-noop.c
 # 	ENGINE=engine-timed.c
 # endif
 
+ifeq ($(SIGHTGLASS_OUTPUTFOLDER),)
+SIGHTGLASS_OUTPUTFOLDER=./
+endif
+
 # Just pick one of the builds, as we only want wasm2c and uv which are unchanges across all versions
 WABT_BIN_ROOT=$(WABT_SRC_ROOT)/build_release_guardpages
 WASM2C=$(WABT_BIN_ROOT)/wasm2c
