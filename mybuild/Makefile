@@ -8,8 +8,10 @@ WABT_SRC_ROOT=$(ROOT_PATH)/hfi_wasm2c_sandbox_compiler/
 UVWASI_PATH=$(WABT_SRC_ROOT)/third_party/uvwasi
 HFIPATH=$(ROOT_PATH)/hw_isol_gem5/tests/test-progs/hfi/
 
+ITERATIONS=100
+
 WASM2C_RUNTIME_PATH=$(WABT_SRC_ROOT)/wasm2c/
-WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c wasm-rt-runner-static.c)
+WASM2C_RUNTIME_FILES=$(addprefix $(WASM2C_RUNTIME_PATH), wasm-rt-impl.c wasm-rt-os-unix.c uvwasi-rt.c wasm-rt-runner-static-many.c)
 # ifdef NOTIMED
 ENGINE=engine-noop.c
 # else
@@ -35,22 +37,22 @@ BENCHMARK_FLAGS=-O3
 
 .PRECIOUS: %_build_guardpage
 %_build_guardpage: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -DWASM_NONHFI_USE_ASM_MOVE -DHFI_VOLATILE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_guardpage
 
 .PRECIOUS: %_build_guardpage_asmmove
 %_build_guardpage_asmmove: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -DWASM_NONHFI_USE_ASM_MOVE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_GUARD_PAGES -DWASM_NONHFI_USE_ASM_MOVE -DHFI_VOLATILE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_guardpage_asmmove
 
 .PRECIOUS: %_build_boundschecks
 %_build_boundschecks: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_BOUNDS_CHECKS -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_BOUNDS_CHECKS -DWASM_NONHFI_USE_ASM_MOVE -DHFI_VOLATILE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_boundschecks
 
 .PRECIOUS: %_build_masking
 %_build_masking: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
-	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_MASKING -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_MASKING -DWASM_NONHFI_USE_ASM_MOVE -DHFI_VOLATILE -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_masking
 
 .PRECIOUS: %_build_hfi
@@ -76,43 +78,43 @@ build: $(addsuffix _all, $(BENCHMARKS))
 %_guardpage_run:
 	echo "Running ../benchmarks/$*/benchmark_guardpage" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage.json" ./benchmark_guardpage && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage.json" ./benchmark_guardpage $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage"
 
 %_guardpage_asmmove_run:
 	echo "Running ../benchmarks/$*/benchmark_guardpage_asmmove" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove.json" ./benchmark_guardpage_asmmove && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove.json" ./benchmark_guardpage_asmmove $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_guardpage_asmmove"
 
 %_boundschecks_run:
 	echo "Running ../benchmarks/$*/benchmark_boundschecks" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks.json" ./benchmark_boundschecks && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks.json" ./benchmark_boundschecks $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_boundschecks"
 
 %_masking_run:
 	echo "Running ../benchmarks/$*/benchmark_masking" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking.json" ./benchmark_masking && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking.json" ./benchmark_masking $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_masking"
 
 %_hfi_run:
 	echo "Running ../benchmarks/$*/benchmark_hfi" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi.json" ./benchmark_hfi && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi.json" ./benchmark_hfi $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfi"
 
 %_hfiemulate_run:
 	echo "Running ../benchmarks/$*/benchmark_hfiemulate" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate.json" ./benchmark_hfiemulate && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate.json" ./benchmark_hfiemulate $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate"
 
 %_hfiemulate2_run:
 	echo "Running ../benchmarks/$*/benchmark_hfiemulate2" \
 		&& cd ../benchmarks/$* && \
-		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" ./benchmark_hfiemulate2 && \
+		hyperfine -N --warmup 10 --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" ./benchmark_hfiemulate2 $(ITERATIONS) && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2"
 
 
