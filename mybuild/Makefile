@@ -74,7 +74,12 @@ BENCHMARK_FLAGS=-O3
 	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_HFI -DHFI_EMULATION2 -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
 	cp $@ ../benchmarks/$*/benchmark_hfiemulate2
 
-%_all: %_build_guardpage %_build_guardpage_asmmove %_build_boundschecks %_build_masking %_build_hfi %_build_hfiemulate %_build_hfiemulate2
+.PRECIOUS: %_build_segment
+%_build_segment: %.wasm.c $(WASM2C_RUNTIME_FILES) $(ENGINE)
+	$(CC) $(BENCHMARK_FLAGS) -DWASM_USE_SEGMENT -o $@ $< $(WASM2C_RUNTIME_FILES) $(ENGINE) $(INCS) $(DEPS) $(LIBS)
+	cp $@ ../benchmarks/$*/benchmark_segment
+
+%_all: %_build_guardpage %_build_guardpage_asmmove %_build_boundschecks %_build_masking %_build_hfi %_build_hfiemulate %_build_hfiemulate2 %_build_segment
 	touch $*_all
 
 build: $(addsuffix _all, $(BENCHMARKS))
@@ -121,6 +126,12 @@ build: $(addsuffix _all, $(BENCHMARKS))
 		hyperfine $(HYPERFINEARGS) --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" ./benchmark_hfiemulate2 && \
 		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_hfiemulate2"
 
+%_segment_run:
+	echo "Running ../benchmarks/$*/benchmark_segment" \
+		&& cd ../benchmarks/$* && \
+		hyperfine $(HYPERFINEARGS) --export-json "$(SIGHTGLASS_OUTPUTFOLDER)/$*_segment.json" ./benchmark_segment && \
+		cat "$(SIGHTGLASS_OUTPUTFOLDER)/$*_segment.json" | jq '.results[0].mean * 1000' > "$(SIGHTGLASS_OUTPUTFOLDER)/$*_segment"
+
 
 run_guardpage         : $(addsuffix _guardpage_run,         $(BENCHMARKS))
 run_guardpage_asmmove : $(addsuffix _guardpage_asmmove_run, $(BENCHMARKS))
@@ -129,6 +140,7 @@ run_masking           : $(addsuffix _masking_run,           $(BENCHMARKS))
 run_hfi               : $(addsuffix _hfi_run,               $(BENCHMARKS))
 run_hfiemulate        : $(addsuffix _hfiemulate_run,        $(BENCHMARKS))
 run_hfiemulate2       : $(addsuffix _hfiemulate2_run,       $(BENCHMARKS))
+run_segment           : $(addsuffix _segment_run,           $(BENCHMARKS))
 
 %_remove_benchmark:
 	rm -f ../benchmarks/$*/benchmark_*
